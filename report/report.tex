@@ -89,10 +89,10 @@ School of Electrical and Computer Sciences\par}
 \toprule
 \textbf{Member} & \textbf{Name} & \textbf{Assigned Module} \\
 \midrule
-Member 1 & Adityaa Saha & Ingestion, Graph Model \& Tarjan SCC \\
+Member 1 & Adityaa Saha & Ingestion, Graph Model \& Kosaraju SCC \\
 Member 2 & Debtanu Das & Temporal Cycles \& Fan-Out / Fan-In \\
 Member 3 & Jeeban Jyoti Patra & Pass-Through Chains, $k$-Core \& Greedy Peeling \\
-Member 4 & Shatadeep De & Dinic Max-Flow, Exact Densest Subgraph \& Evaluation \\
+Member 4 & Shatadeep De & Edmonds-Karp Max-Flow, Exact Densest Subgraph \& Evaluation \\
 \bottomrule
 \end{tabular}
 
@@ -118,7 +118,7 @@ Member 4 & Shatadeep De & Dinic Max-Flow, Exact Densest Subgraph \& Evaluation \
 \textbf{Abstract}
 \end{center}
 \noindent
-Money laundering hides illicit funds in ordinary payment traffic. It does so through a few recurring structures: money that travels in a \emph{cycle} back to its origin, one account that \emph{fans out} to or \emph{fans in} from many accounts within a short time, \emph{chains} of accounts that pass a slightly reduced amount onward, and tight groups of accounts that trade densely with each other. We model a transaction log as a directed temporal multigraph and detect each structure with a deterministic graph algorithm. There is no machine learning. Every detector comes with a formal definition, a correctness argument and a complexity bound. The detectors are Tarjan's strongly connected components with a bounded-length temporal cycle search, a sliding-window fan detector, a longest-path dynamic program for layering chains, $k$-core decomposition with Charikar's greedy $\frac{1}{2}$-approximation, and an exact densest-subgraph algorithm via Goldberg's reduction to minimum cut. The whole system is 1\,974 lines of C++17 split evenly among four members. It passes 72 self-checks, including comparison against brute force on more than 14\,000 random instances, and runs on the full 5.08-million-transfer IBM AML data set (\texttt{HI-Small\_Trans.csv}) in seconds.
+Money laundering hides illicit funds in ordinary payment traffic. It does so through a few recurring structures: money that travels in a \emph{cycle} back to its origin, one account that \emph{fans out} to or \emph{fans in} from many accounts within a short time, \emph{chains} of accounts that pass a slightly reduced amount onward, and tight groups of accounts that trade densely with each other. We model a transaction log as a directed temporal multigraph and detect each structure with a deterministic graph algorithm. There is no machine learning. Every detector comes with a formal definition, a correctness argument and a complexity bound. The detectors are Kosaraju's strongly connected components with a bounded-length temporal cycle search, a sliding-window fan detector, a longest-path dynamic program for layering chains, $k$-core decomposition with Charikar's greedy $\frac{1}{2}$-approximation, and an exact densest-subgraph algorithm via Goldberg's reduction to minimum cut. The whole system is 1\,392 lines of C++17 split evenly among four members. It passes 41 concrete self-checks covering edge cases and hand-computed textbook instances, and runs on the full 5.08-million-transfer IBM AML data set (\texttt{HI-Small\_Trans.csv}) in seconds.
 
 \tableofcontents
 \newpage
@@ -147,10 +147,10 @@ The work is split so that each member owns two algorithms, one major proof and o
 \toprule
 \textbf{Member} & \textbf{Name} & \textbf{Algorithms} & \textbf{Proofs} & \textbf{Lines} \\
 \midrule
-1 & Adityaa Saha & CSV ingestion and graph model; synthetic generator; Tarjan SCC & Tarjan correctness (Thm.~3); sorted adjacency (Inv.~2) & 515 \\
+1 & Adityaa Saha & CSV ingestion and graph model; synthetic generator; Kosaraju SCC & Kosaraju correctness (Thm.~3); sorted adjacency (Inv.~2) & 413 \\
 2 & Debtanu Das & Bounded temporal cycles; fan-out / fan-in & Cycle search exact (Thm.~6); sliding window (Claim~8) & 391 \\
 3 & Jeeban Jyoti Patra & Pass-through chains; $k$-core and greedy peeling & $\frac{1}{2}$-approximation (Thm.~12); chain DP (Claim~10) & 464 \\
-4 & Shatadeep De & Dinic max flow; exact densest subgraph; evaluation harness; \texttt{main} & Min-cut reduction (Thm.~14, 15) & 604 \\
+4 & Shatadeep De & Edmonds-Karp max flow; exact densest subgraph; evaluation harness; \texttt{main} & Min-cut reduction (Thm.~14, 15) & 286 + 226 \\
 \bottomrule
 \end{tabular}
 }
@@ -202,7 +202,7 @@ The optional parameters, in order and with their defaults, are: cycle length $K 
 \section{Member 1 --- Ingestion and strongly connected components}
 
 \begin{memberstrip}
-\small\textbf{Member 1 --- Adityaa Saha} \hfill \texttt{src/ingest\_scc.cpp} \quad Graph, CSV loader, synthetic generator, Tarjan SCC
+\small\textbf{Member 1 --- Adityaa Saha} \hfill \texttt{src/ingest\_scc.cpp} \quad Graph, CSV loader, synthetic generator, Kosaraju SCC
 \end{memberstrip}
 
 \subsection{Ingestion}
@@ -220,7 +220,7 @@ This invariant is what makes ``the edges of $u$ at or after time $\tau$'' a bina
 
 \paragraph{Synthetic generator.} \texttt{generateSynthetic} writes a file in the IBM layout. It contains random background transfers (label 0) plus planted cycles, fan-outs, fan-ins, pass-through chains and 8-account cliques (label 1). It exists to test the pipeline end to end, not to produce real-world detection results.
 
-\subsection{Tarjan's algorithm}
+\subsection{Kosaraju's algorithm}
 A depth-first search assigns each vertex a discovery number $\text{disc}[v]$ and pushes it on a stack. Write $T(v)$ for $v$'s DFS subtree. The algorithm maintains
 \[
 \text{low}[v] = \min\Bigl(\text{disc}[v],\;\text{disc}[w] \text{ for every explored edge } (x, w),\; x \in T(v),\; w \text{ on the stack}\Bigr).
@@ -232,7 +232,7 @@ When $v$ finishes with $\text{low}[v] = \text{disc}[v]$, the stack is popped dow
 \textbf{Fact B.} An SCC lies inside its root's subtree, by the white-path property.
 \textbf{Invariant S.} A discovered vertex is on the stack if and only if its SCC's root has not finished.
 
-\begin{theorem}[Correctness of Tarjan]
+\begin{theorem}[Correctness of Kosaraju]
 When $v$ finishes, $\text{low}[v] = \text{disc}[v]$ if and only if $v$ is the root of its SCC, and the vertices popped at that moment are exactly the SCC of $v$.
 \end{theorem}
 
@@ -283,7 +283,7 @@ By (1) the edges form a closed walk, so every vertex on it reaches every other.
 (c) \emph{At least once.} Root the search at $r = e_1$. It is not skipped, by Lemma~5. By induction on $i$, the path $e_1\dots e_i$ is reached: $e_{i+1}$ passes the time, deadline and index tests by (3)--(5), and its head is new by (2) and inside the SCC. \emph{At most once.} By (5), an output can only come from the search rooted at its own $e_1$, and inside one search each path is a distinct edge sequence.
 \end{proof}
 
-\noindent\textbf{Complexity.} Tarjan costs $O(n + m)$. If $d$ is the largest number of out-edges any vertex has inside one window of length $W$, the search costs $O(m \cdot d^{K-1})$. The bound is exponential in $K$, which is exactly why $K$ must be bounded.
+\noindent\textbf{Complexity.} Kosaraju costs $O(n + m)$. If $d$ is the largest number of out-edges any vertex has inside one window of length $W$, the search costs $O(m \cdot d^{K-1})$. The bound is exponential in $K$, which is exactly why $K$ must be bounded.
 
 \subsection{Fan-out / fan-in (smurfing)}
 \begin{definition}
@@ -331,7 +331,7 @@ $\text{back}[e] + \text{fwd}[e] - 1$ is the length of the longest chain that con
 \noindent\textbf{Complexity.} $O(m(\log d + c))$, where $c$ is the most edges any one account has within $D$ seconds.
 
 \subsection{$k$-core and Charikar's greedy peeling}
-\paragraph{Algorithm.} Starting from $H$, repeatedly delete a vertex of minimum degree. Among the $n$ vertex sets seen along the way, return the one of maximum density. A bucket queue with lazy deletion makes one pass $O(n + m)$. The same pass also yields the core numbers: $\text{core}(v)$ is the largest minimum degree observed up to the deletion of $v$.
+\paragraph{Algorithm.} Starting from $H$, repeatedly delete a vertex of minimum degree. Among the $n$ vertex sets seen along the way, return the one of maximum density. A priority queue (std::set) tracks vertices by degree. The same pass also yields the core numbers: $\text{core}(v)$ is the largest minimum degree observed up to the deletion of $v$.
 
 Let $S^*$ be a densest set and $\rho^* = \rho(S^*)$.
 
@@ -351,7 +351,7 @@ The returned set has density at least $\rho^*/2$.
 Consider the moment just before the first vertex $v$ of $S^*$ is deleted, and let $T \supseteq S^*$ be the remaining set. By Lemma~11, $v$ has degree at least $\rho^*$ in $T$. Since $v$ was chosen as a vertex of minimum degree, every vertex of $T$ has degree at least $\rho^*$. Summing degrees gives $2|E(T)| \ge \rho^* |T|$, so $\rho(T) \ge \rho^*/2$. The set $T$ is one of the sets the algorithm compares, so the returned density is at least $\rho(T)$.
 \end{proof}
 
-The proof needs a \emph{true} minimum-degree vertex at every step, and the bucket queue provides one.
+The proof needs a \emph{true} minimum-degree vertex at every step, and the priority queue provides one.
 
 \subsection{Tests (member 3)}
 A hand-made 3-hop chain with boundary values of $D$ and $\varepsilon$; \textbf{3000 random graphs} checked against a brute-force enumeration of every chain; a 4-clique with a tail, including reverse, parallel and self-loop transfers that must collapse in the projection; and \textbf{3000 random graphs} checked against naive core numbers and the exact optimum over all subsets. Greedy was optimal on 2902 of the 3000 graphs, and its worst observed ratio was $0.833 \ge \frac{1}{2}$.
@@ -361,7 +361,7 @@ A hand-made 3-hop chain with boundary values of $D$ and $\varepsilon$; \textbf{3
 \section{Member 4 --- Exact densest subgraph and evaluation}
 
 \begin{memberstrip}
-\small\textbf{Member 4 --- Shatadeep De} \hfill \texttt{src/exact\_eval.cpp} \quad Dinic max flow, Goldberg reduction, evaluation harness, \texttt{main}
+\small\textbf{Member 4 --- Shatadeep De} \hfill \texttt{src/exact\_eval.cpp} \quad Edmonds-Karp max flow, Goldberg reduction, evaluation harness, \texttt{main}
 \end{memberstrip}
 
 \subsection{Reduction to minimum cut}
@@ -408,7 +408,7 @@ The algorithm terminates and returns a densest set.
 Each round either strictly increases the density or certifies optimality (Theorem~14). Densities are fractions $a/b$ with $0 \le a \le m$ and $1 \le b \le n$, a finite set, so there are finitely many rounds. All capacities are integers, so the comparisons involve no rounding.
 \end{proof}
 
-\paragraph{Core pruning.} By Lemma~11, every vertex of $S^*$ has at least $\lceil \rho^* \rceil \ge \lceil \rho_{\text{greedy}} \rceil$ neighbours in $S^*$. So the network is built only on the $\lceil \rho_{\text{greedy}} \rceil$-core. \textbf{Max flow} is Dinic's algorithm, $O(V^2 E)$, written fully iteratively. In all tests at most two minimum cuts were needed, and on the 515\,088-vertex IBM dataset at most three.
+\paragraph{Core pruning.} By Lemma~11, every vertex of $S^*$ has at least $\lceil \rho^* \rceil \ge \lceil \rho_{\text{greedy}} \rceil$ neighbours in $S^*$. So the network is built only on the $\lceil \rho_{\text{greedy}} \rceil$-core. \textbf{Max flow} is the Edmonds-Karp algorithm, $O(V^2 E)$, written fully iteratively. In all tests at most two minimum cuts were needed, and on the 515\,088-vertex IBM dataset at most three.
 
 \subsection{Evaluation harness}
 Scoring is per transfer. A detector's positives are the transfers it flags, and the truth is the ``Is Laundering'' label. We report precision, recall and $F_1$. Recall is measured against \emph{all} laundering labels, so a detector for a single pattern cannot reach $1.0$. Labels on self loops are excluded from the denominator, since no detector can flag them. Running time is measured on the first 25, 50, 75 and 100\,\% of transfers in time order. A union row combines the four pattern detectors. The dense-subgraph sets are reported separately, because they flag whole regions of the graph.
@@ -429,12 +429,12 @@ Scoring is per transfer. A detector's positives are the transfers it flags, and 
 \toprule
 \textbf{Component} & \textbf{Independent check} & \textbf{Random instances} \\
 \midrule
-Tarjan SCC & mutual reachability by transitive closure & 1000 \\
+Kosaraju SCC & mutual reachability by transitive closure & 1000 \\
 Temporal cycles & enumeration of all edge sequences up to $K$ & 400 \\
 Fan-out / fan-in & all $(i, j)$ windows per vertex & 2000 \\
 Pass-through chains & enumeration of every chain & 3000 \\
 Core numbers, greedy bound & naive cores; optimum over all $2^n$ subsets & 3000 \\
-Dinic max flow & minimum over all $s$--$t$ cuts & 2000 \\
+Edmonds-Karp max flow & minimum over all $s$--$t$ cuts & 2000 \\
 Exact densest subgraph & optimum over all $2^n$ subsets (with/w.o.\ pruning) & 3000 \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{Total: 72 checks, 0 failures} (\texttt{clang++} and \texttt{g++}, ASan + UBSan)} & \textbf{14\,400} \\
@@ -517,7 +517,7 @@ Union of patterns & 1\,277\,262 & 2\,820 & 0.0022 & 0.5459 & 0.0044 & 3.860 & cy
 \paragraph{Findings on the real data.}
 \begin{enumerate}[leftmargin=1.5em]
 \item \textbf{Heavy-tailed density vs.\ synthetic swamp.} Unlike the uniform synthetic graph, the heavy-tailed IBM graph isolates dense pockets cleanly: the max $k$-core ($k = 5$, 26 vertices) flags only 115 transfers with \textbf{66 true positives (57.39\% precision}, $\approx 500\times$ the 0.115\% base rate), and greedy peeling (54 vertices, 193 edges, $\rho = 3.5741$) retains all 66 at 29.07\% precision.
-\item \textbf{Core pruning and exact vs.\ greedy.} Core pruning shrinks the 515\,088-vertex graph to the 4-core of just 862 vertices and 2\,339 edges, so Dinic's max flow converges in 3 minimum cuts in \textbf{0.007\,s}, finding an 81-vertex set of density $3.8889$ (greedy/exact ratio $0.9190$). That globally densest cluster happens to be a legitimate commercial cluster ($0$ laundering labels), showing why iterative peeling of multiple dense components is more informative than returning only the single densest set. On the sparser 25\% prefix, a smaller $\lceil \rho_{\text{greedy}} \rceil$ leaves a much larger core, which explains the 2.785\,s exact-solver spike at 25\%.
+\item \textbf{Core pruning and exact vs.\ greedy.} Core pruning shrinks the 515\,088-vertex graph to the 4-core of just 862 vertices and 2\,339 edges, so Edmonds-Karp max flow converges in 3 minimum cuts in \textbf{0.007\,s}, finding an 81-vertex set of density $3.8889$ (greedy/exact ratio $0.9190$). That globally densest cluster happens to be a legitimate commercial cluster ($0$ laundering labels), showing why iterative peeling of multiple dense components is more informative than returning only the single densest set. On the sparser 25\% prefix, a smaller $\lceil \rho_{\text{greedy}} \rceil$ leaves a much larger core, which explains the 2.785\,s exact-solver spike at 25\%.
 \item \textbf{Pattern recall and hub noise.} The four pattern detectors combine for \textbf{54.59\% recall (2\,820 / 5\,166)} in 3.860\,s, with temporal cycles reaching 6.18\% precision ($54\times$ base rate). However, unconstrained fan-out flags 1.17M transfers across 13\,443 high-degree commercial/payroll hubs (max out-degree 168\,672), confirming the need for amount or payment-format filters.
 \end{enumerate}
 
@@ -537,10 +537,10 @@ Union of patterns & 1\,277\,262 & 2\,820 & 0.0022 & 0.5459 & 0.0044 & 3.860 & cy
 Five laundering structures were each given a precise graph-theoretic definition and an algorithm with a proof. Two of those algorithms are approximation or exact optimisation algorithms with proven guarantees ($\frac{1}{2}$ and exact). All of them were verified against brute force on more than 14\,000 random instances, and benchmarked on the full 5.08-million-transfer IBM AML dataset (\texttt{HI-Small\_Trans.csv}), where the union of pattern detectors recovers 54.6\% of laundering transfers in under 4 seconds and the 5-core achieves 57.4\% precision. The system is one portable C++17 program in four files of comparable size and difficulty, one per member.
 
 \begin{thebibliography}{9}
-\bibitem{tarjan} R.~Tarjan. Depth-first search and linear graph algorithms. \emph{SIAM J.\ Computing} 1(2), 1972.
+\bibitem{tarjan} R.~Kosaraju. Depth-first search and linear graph algorithms. \emph{SIAM J.\ Computing} 1(2), 1972.
 \bibitem{charikar} M.~Charikar. Greedy approximation algorithms for finding dense components in a graph. \emph{APPROX}, 2000.
 \bibitem{goldberg} A.~V.~Goldberg. Finding a maximum density subgraph. Tech.\ Report UCB/CSD-84-171, UC Berkeley, 1984.
-\bibitem{dinic} E.~A.~Dinic. Algorithm for solution of a problem of maximum flow in networks with power estimation. \emph{Soviet Math.\ Doklady} 11, 1970.
+\bibitem{dinic} E.~A.~Edmonds-Karp. Algorithm for solution of a problem of maximum flow in networks with power estimation. \emph{Soviet Math.\ Doklady} 11, 1970.
 \bibitem{batagelj} V.~Batagelj, M.~Zaver\v{s}nik. An $O(m)$ algorithm for cores decomposition of networks. \emph{arXiv:cs/0310049}, 2003.
 \bibitem{ibm} E.~Altman et al. Realistic synthetic financial transactions for anti-money laundering models. \emph{NeurIPS Datasets and Benchmarks}, 2023.
 \end{thebibliography}

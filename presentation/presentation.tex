@@ -112,7 +112,7 @@
 \toprule
 \textbf{\#} & \textbf{Member \& Algorithms} & \textbf{Main proof} & \textbf{File} \\
 \midrule
-1 & Adityaa Saha: Ingestion, Tarjan SCC & Tarjan correct & \texttt{src/ingest\_scc.cpp} \\
+1 & Adityaa Saha: Ingestion, Kosaraju SCC & Kosaraju correct & \texttt{src/ingest\_scc.cpp} \\
 2 & Debtanu Das: Temporal cycles, fan-out/in & Cycle search exact & \texttt{src/cycles\_fan.cpp} \\
 3 & Jeeban Jyoti Patra: Layering chains, peeling & $\frac{1}{2}$-approximation & \texttt{src/chains\_peeling.cpp} \\
 4 & Shatadeep De: Exact densest, evaluation & Min-cut reduction & \texttt{src/exact\_eval.cpp} \\
@@ -155,7 +155,7 @@ Every adjacency list is in non-decreasing time order, because it is filled in in
 \end{frame}
 
 % ========================== SLIDE 5 ==========================
-\begin{frame}{Tarjan's SCC algorithm \memberbadge{Member 1: Adityaa Saha}}
+\begin{frame}{Kosaraju's SCC algorithm \memberbadge{Member 1: Adityaa Saha}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.58\textwidth}
 \begin{itemize}
@@ -178,7 +178,7 @@ Member 2 prunes every search edge that leaves the root's SCC.
 \end{frame}
 
 % ========================== SLIDE 6 ==========================
-\begin{frame}{Proof: Tarjan is correct \memberbadge{Member 1: Adityaa Saha}}
+\begin{frame}{Kosaraju 2-pass SCC \memberbadge{Member 1: Adityaa Saha}}
 \textbf{Theorem.} When $v$ finishes, $\text{low}[v] = \text{disc}[v] \iff v$ is the root of its SCC, and the popped set is exactly that SCC.
 
 \vspace{0.3cm}
@@ -197,7 +197,7 @@ Member 2 prunes every search edge that leaves the root's SCC.
 \setlength{\itemsep}{0.5em}
 \item Hand-made CSV: parallel edges, a self loop, rows out of order, a malformed row. Checks degrees, the handshake sum, the sorted invariant and the Amount Paid column.
 \item Timestamps: the epoch, a leap day, a wrong format.
-\item \textbf{1000 random graphs}: Tarjan's components match mutual reachability from a transitive closure.
+\item \textbf{1000 random graphs}: Kosaraju's components match mutual reachability from a transitive closure.
 \item A 200\,000-vertex cycle gives exactly one SCC, with no stack overflow.
 \item Synthetic generator round trip: every planted transfer comes back labelled.
 \end{itemize}
@@ -354,7 +354,7 @@ $f$ \textbf{follows} $e$: $f$ leaves the account $e$ entered, comes later in ind
 \setlength{\itemsep}{0.5em}
 \item Project to the simple undirected graph $H$, where parallel and reverse transfers collapse.
 \item Repeatedly delete a \textbf{minimum-degree} vertex, and remember the densest remaining set.
-\item A bucket queue with lazy deletion gives $O(n + m)$. The same pass gives every core number.
+\item A priority queue (std::set) maintains vertices by degree. The same pass gives every core number.
 \end{itemize}
 
 \vspace{0.45cm}
@@ -431,7 +431,7 @@ $u \leftrightarrow v$ (edge) & $q$ \\
 \end{tabular}
 \end{center}
 \vspace{0.15cm}
-All capacities are integers. Max flow uses Dinic's algorithm, written iteratively.
+All capacities are integers. Max flow uses Edmonds-Karp's algorithm, written iteratively.
 \end{column}
 \begin{column}{0.42\textwidth}
 \centering
@@ -559,7 +559,7 @@ Exact densest & 321 & 0 & 0.0000 & 0.0000 & 0.0000 & 0.007 & 81 vertices, $\rho 
 \begin{itemize}
 \setlength{\itemsep}{0.2em}
 \item \textbf{5-core precision 57.4\%} ($\approx 500\times$ base rate): 66 of 115 flagged transfers are illicit, unlike the uniform synthetic swamp.
-\item \textbf{Core pruning} shrinks 515k vertices to 862 ($4$-core); Dinic exact min-cut finishes in \textbf{0.007\,s} ($\rho^* = 3.889 > 3.574$).
+\item \textbf{Core pruning} shrinks 515k vertices to 862 ($4$-core); Edmonds-Karp exact min-cut finishes in \textbf{0.007\,s} ($\rho^* = 3.889 > 3.574$).
 \item \textbf{Union recall 54.6\%} in 3.86\,s; unconstrained fan-out flags 13\,443 commercial/payroll hubs, motivating amount/format filters.
 \end{itemize}
 \end{frame}

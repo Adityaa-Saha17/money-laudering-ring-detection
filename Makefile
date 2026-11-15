@@ -2,8 +2,8 @@ CXX ?= clang++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -Isrc
 
 AML_BIN = aml
-SRC_MAIN = src/exact_eval.cpp
-SRCS = src/ingest_scc.cpp src/cycles_fan.cpp src/chains_peeling.cpp src/exact_eval.cpp
+SRC_MAIN = src/main.cpp
+SRCS = src/ingest_scc.cpp src/cycles_fan.cpp src/chains_peeling.cpp src/exact_eval.cpp src/main.cpp
 
 .PHONY: all clean test generate detect evaluate report presentation help
 
@@ -60,7 +60,7 @@ clean:
 help:
 	@echo "Available make targets:"
 	@echo "  make              - Build aml executable"
-	@echo "  make test         - Run 72 self-tests (unit + randomized)"
+	@echo "  make test         - Run the small hand-checked tests"
 	@echo "  make generate     - Generate synthetic dataset in data/synth.csv"
 	@echo "  make detect       - Run pattern and densest subgraph detection on dataset"
 	@echo "  make evaluate     - Compute precision/recall/F1 and scaling benchmark"
