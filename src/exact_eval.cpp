@@ -1,32 +1,31 @@
 // =====================================================================================
-//  Money-Laundering Ring Detector                      MFCS group project, part 4 of 4
-//  member4_exact_eval.cpp
+//  Money-Laundering Ring Detector
+//  exact_eval.cpp
 //
-//  Member 4: Dinic's maximum flow, exact densest subgraph by reduction to minimum cut,
-//            evaluation harness (precision / recall / F1, running time vs graph size),
-//            and the program's main().
-//  Proof owned: the exact densest-subgraph reduction to minimum cut.
+//  Dinic's maximum flow, exact densest subgraph by reduction to minimum cut,
+//  evaluation harness (precision / recall / F1, running time vs graph size),
+//  and the program's main().
 //
-//  Builds on member3_chains_peeling.cpp (and through it, members 2 and 1).
+//  Builds on chains_peeling.cpp (and through it, cycles_fan.cpp and ingest_scc.cpp).
 //
 //  Build the whole program (macOS):
-//      clang++ -std=c++17 -O2 member4_exact_eval.cpp -o aml
+//      clang++ -std=c++17 -O2 exact_eval.cpp -o aml
 //  Usage:
-//      ./aml test                              run every member's self-tests
+//      ./aml test                              run all self-tests
 //      ./aml generate <out.csv> [accounts=20000] [background=200000] [seed=1]
-//      ./aml detect   <transactions.csv> [params...]   one section per member
+//      ./aml detect   <transactions.csv> [params...]   run all detectors and print report
 //      ./aml evaluate <transactions.csv> [params...]   precision/recall + timing tables
 //  params, in order: K Whours maxCycles fanMin fanWhours chainMin chainDhours chainEps
 //      defaults:     6 168    1000000   5      24        3        24          0.10
 // =====================================================================================
-#ifndef AML_PART_OF_LATER
-#define AML_STANDALONE_4
+#ifndef AML_INCLUDED
+#define AML_STANDALONE_EXACT_EVAL
 #endif
-#define AML_PART_OF_LATER
-#include "member3_chains_peeling.cpp"
+#define AML_INCLUDED
+#include "chains_peeling.cpp"
 
-#ifndef AML_MEMBER4_CPP
-#define AML_MEMBER4_CPP
+#ifndef AML_EXACT_EVAL_CPP
+#define AML_EXACT_EVAL_CPP
 
 #include <cstring>
 
@@ -301,7 +300,7 @@ std::vector<Detection> runAll(const Graph& g, const Params& params) {
     UndirectedGraph h = buildUndirected(g);
     PeelResult peeled = peel(h);
     double peelSeconds = secondsSince(start);
-    out.push_back({"Max k-core", edgesInside(g, coreMembers(peeled, peeled.maxCore)), peelSeconds,
+    out.push_back({"Max k-core", edgesInside(g, inKCore(peeled, peeled.maxCore)), peelSeconds,
                    "k = " + std::to_string(peeled.maxCore)});
     std::snprintf(buffer, sizeof(buffer), "%d vertices, density %.3f", peeled.bestVertices, peeled.density());
     out.push_back({"Greedy densest", edgesInside(g, peeled.inDensest), peelSeconds, buffer});
@@ -383,8 +382,8 @@ void evaluate(const Graph& g, const IngestStats& stats, const Params& params, co
 
 // ------------------------------- report section -------------------------------------
 
-void reportMember4(const Graph& g, const UndirectedGraph& h, const PeelResult& peeled) {
-    std::printf("== Member 4: exact densest subgraph ==\n");
+void reportExactDensest(const Graph& g, const UndirectedGraph& h, const PeelResult& peeled) {
+    std::printf("== Exact densest subgraph ==\n");
     auto start = std::chrono::steady_clock::now();
     ExactResult exact = findDensestExact(h, peeled);
     double exactSeconds = secondsSince(start);
@@ -410,7 +409,7 @@ UndirectedGraph fromPairs(int n, const std::vector<std::pair<int, int>>& pairs) 
     return buildUndirected(g);
 }
 
-bool testMember4() {
+bool testExactEval() {
     int failedBefore = checksFailed;
     std::mt19937 rng(4242);
 
@@ -524,25 +523,25 @@ bool testMember4() {
     CHECK(scoreDetection(s, all[7].flagged, positives).recall > 0.5);
 
     bool ok = checksFailed == failedBefore;
-    std::printf("[member 4] max flow + exact densest + evaluation tests: %s (exact beat greedy on %d graphs, "
+    std::printf("[exact_eval] max flow + exact densest + evaluation tests: %s (exact beat greedy on %d graphs, "
                 "at most %d min cuts)\n", ok ? "PASS" : "FAIL", improved, maxIterations);
     return ok;
 }
 
 bool runAllTests() {
-    bool ok = testMember1();
-    ok = testMember2() && ok;
-    ok = testMember3() && ok;
-    ok = testMember4() && ok;
+    bool ok = testIngestScc();
+    ok = testCyclesFan() && ok;
+    ok = testChainsPeeling() && ok;
+    ok = testExactEval() && ok;
     std::printf("%s: %d checks, %d failed\n", ok ? "ALL TESTS PASSED" : "SOME TESTS FAILED", checksRun, checksFailed);
     return ok;
 }
 
-#endif  // AML_MEMBER4_CPP
+#endif  // AML_EXACT_EVAL_CPP
 
 // ------------------------------- main -----------------------------------------------
 
-#ifdef AML_STANDALONE_4
+#ifdef AML_STANDALONE_EXACT_EVAL
 void printUsage(const char* program) {
     std::fprintf(stderr,
                  "usage:\n"
@@ -594,12 +593,12 @@ int main(int argc, char** argv) {
     start = std::chrono::steady_clock::now();
     SccResult scc = tarjanScc(g);
     double sccSeconds = secondsSince(start);
-    reportMember1(g, stats, loadSeconds, scc, sccSeconds);
-    reportMember2(g, scc, params.cycle, params.fan);
+    reportIngestScc(g, stats, loadSeconds, scc, sccSeconds);
+    reportCyclesFan(g, scc, params.cycle, params.fan);
     UndirectedGraph h;
     PeelResult peeled;
-    reportMember3(g, params.chain, h, peeled);
-    reportMember4(g, h, peeled);
+    reportChainsPeeling(g, params.chain, h, peeled);
+    reportExactDensest(g, h, peeled);
     return 0;
 }
 #endif

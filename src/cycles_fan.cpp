@@ -1,22 +1,20 @@
 // =====================================================================================
-//  Money-Laundering Ring Detector                      MFCS group project, part 2 of 4
-//  member2_cycles_fan.cpp
+//  Money-Laundering Ring Detector
+//  cycles_fan.cpp
 //
-//  Member 2: bounded-length temporal cycles (round-tripping) and
-//            fan-out / fan-in (smurfing).
-//  Proof owned: the bounded temporal cycle search is exact (+ the sliding-window invariant).
+//  Bounded-length temporal cycles (round-tripping) and fan-out / fan-in (smurfing).
 //
-//  Builds on member1_ingest_scc.cpp (Graph, tarjanScc).
-//  Build this part alone:  clang++ -std=c++17 -O2 member2_cycles_fan.cpp -o part2 && ./part2
+//  Builds on ingest_scc.cpp (Graph, tarjanScc).
+//  Build this module alone:  clang++ -std=c++17 -O2 cycles_fan.cpp -o cycles_fan && ./cycles_fan
 // =====================================================================================
-#ifndef AML_PART_OF_LATER
-#define AML_STANDALONE_2
+#ifndef AML_INCLUDED
+#define AML_STANDALONE_CYCLES_FAN
 #endif
-#define AML_PART_OF_LATER
-#include "member1_ingest_scc.cpp"
+#define AML_INCLUDED
+#include "ingest_scc.cpp"
 
-#ifndef AML_MEMBER2_CPP
-#define AML_MEMBER2_CPP
+#ifndef AML_CYCLES_FAN_CPP
+#define AML_CYCLES_FAN_CPP
 
 // ------------------------------- temporal cycles ------------------------------------
 
@@ -179,8 +177,8 @@ FanResult findFans(const Graph& g, FanParams params, bool outgoing) {
 
 // ------------------------------- report section -------------------------------------
 
-void reportMember2(const Graph& g, const SccResult& scc, const CycleParams& cycleParams, const FanParams& fanParams) {
-    std::printf("== Member 2: temporal cycles and fan-out / fan-in ==\n");
+void reportCyclesFan(const Graph& g, const SccResult& scc, const CycleParams& cycleParams, const FanParams& fanParams) {
+    std::printf("== Temporal cycles and fan-out / fan-in ==\n");
     auto start = std::chrono::steady_clock::now();
     bool truncated = false;
     std::vector<std::vector<int>> cycles = findTemporalCycles(g, scc, cycleParams, &truncated);
@@ -259,7 +257,7 @@ FanResult bruteFans(const Graph& g, FanParams p, bool outgoing) {
     return res;
 }
 
-bool testMember2() {
+bool testCyclesFan() {
     int failedBefore = checksFailed;
 
     // ---- cycles, hand-made: 3-cycle A->B (10), B->C (20), C->A (30), late parallel A->B (500),
@@ -377,17 +375,17 @@ bool testMember2() {
     CHECK(fanMismatches == 0 && totalHits > 0);
 
     bool ok = checksFailed == failedBefore;
-    std::printf("[member 2] cycle + fan tests: %s (%lld cycles and %lld fan centres vs brute force)\n",
+    std::printf("[cycles_fan] cycle + fan tests: %s (%lld cycles and %lld fan centres vs brute force)\n",
                 ok ? "PASS" : "FAIL", totalCycles, totalHits);
     return ok;
 }
 
-#endif  // AML_MEMBER2_CPP
+#endif  // AML_CYCLES_FAN_CPP
 
-#ifdef AML_STANDALONE_2
+#ifdef AML_STANDALONE_CYCLES_FAN
 int main() {
-    bool ok = testMember1();
-    ok = testMember2() && ok;
+    bool ok = testIngestScc();
+    ok = testCyclesFan() && ok;
     return ok ? 0 : 1;
 }
 #endif

@@ -1,23 +1,21 @@
 // =====================================================================================
-//  Money-Laundering Ring Detector                      MFCS group project, part 3 of 4
-//  member3_chains_peeling.cpp
+//  Money-Laundering Ring Detector
+//  chains_peeling.cpp
 //
-//  Member 3: pass-through chains (layering), undirected projection,
-//            k-core decomposition and Charikar's greedy peeling.
-//  Proof owned: greedy peeling is a 1/2-approximation for the densest subgraph
-//               (+ the chain dynamic-programming invariant).
+//  Pass-through chains (layering), undirected projection,
+//  k-core decomposition and Charikar's greedy peeling.
 //
-//  Builds on member2_cycles_fan.cpp (and through it, member1).
-//  Build this part alone:  clang++ -std=c++17 -O2 member3_chains_peeling.cpp -o part3 && ./part3
+//  Builds on cycles_fan.cpp (and through it, ingest_scc.cpp).
+//  Build this module alone:  clang++ -std=c++17 -O2 chains_peeling.cpp -o chains_peeling && ./chains_peeling
 // =====================================================================================
-#ifndef AML_PART_OF_LATER
-#define AML_STANDALONE_3
+#ifndef AML_INCLUDED
+#define AML_STANDALONE_CHAINS_PEELING
 #endif
-#define AML_PART_OF_LATER
-#include "member2_cycles_fan.cpp"
+#define AML_INCLUDED
+#include "cycles_fan.cpp"
 
-#ifndef AML_MEMBER3_CPP
-#define AML_MEMBER3_CPP
+#ifndef AML_CHAINS_PEELING_CPP
+#define AML_CHAINS_PEELING_CPP
 
 // ------------------------------- pass-through chains --------------------------------
 
@@ -236,7 +234,7 @@ std::vector<char> edgesInside(const Graph& g, const std::vector<char>& inSet) {
 }
 
 // Vertices of the k-core.
-std::vector<char> coreMembers(const PeelResult& res, int k) {
+std::vector<char> inKCore(const PeelResult& res, int k) {
     std::vector<char> inCore(res.coreNumber.size(), 0);
     for (int v = 0; v < (int)res.coreNumber.size(); v++)
         if (res.coreNumber[v] >= k) inCore[v] = 1;
@@ -245,9 +243,9 @@ std::vector<char> coreMembers(const PeelResult& res, int k) {
 
 // ------------------------------- report section -------------------------------------
 
-// Prints member 3's section and hands the projection and peeling result to member 4.
-void reportMember3(const Graph& g, const ChainParams& chainParams, UndirectedGraph& h, PeelResult& peeled) {
-    std::printf("== Member 3: pass-through chains, k-core and greedy peeling ==\n");
+// Prints the chains and peeling section and outputs the undirected projection and peeling result.
+void reportChainsPeeling(const Graph& g, const ChainParams& chainParams, UndirectedGraph& h, PeelResult& peeled) {
+    std::printf("== Pass-through chains, k-core and greedy peeling ==\n");
     auto start = std::chrono::steady_clock::now();
     ChainResult chains = findChains(g, chainParams);
     double chainSeconds = secondsSince(start);
@@ -265,7 +263,7 @@ void reportMember3(const Graph& g, const ChainParams& chainParams, UndirectedGra
     double peelSeconds = secondsSince(start);
     int coreVertices = 0;
     for (int v = 0; v < g.n; v++) coreVertices += peeled.coreNumber[v] == peeled.maxCore;
-    countFlagged(g, edgesInside(g, coreMembers(peeled, peeled.maxCore)), total, laundering);
+    countFlagged(g, edgesInside(g, inKCore(peeled, peeled.maxCore)), total, laundering);
     std::printf("undirected edges            %lld\n", h.m);
     std::printf("max core                    k=%d, %d vertices, %lld transfers inside (laundering: %lld)\n",
                 peeled.maxCore, coreVertices, total, laundering);
@@ -331,7 +329,7 @@ void bruteDensest(const UndirectedGraph& h, long long& optEdges, int& optVertice
     }
 }
 
-bool testMember3() {
+bool testChainsPeeling() {
     int failedBefore = checksFailed;
 
     // ---- chains, hand-made: A -1000-> B -980-> C -950-> D ten seconds apart (a 3-edge chain);
@@ -449,18 +447,18 @@ bool testMember3() {
     CHECK(peelMismatches == 0);
 
     bool ok = checksFailed == failedBefore;
-    std::printf("[member 3] chain + peeling tests: %s (greedy optimal on %d/3000 graphs, worst ratio %.3f)\n",
+    std::printf("[chains_peeling] chain + peeling tests: %s (greedy optimal on %d/3000 graphs, worst ratio %.3f)\n",
                 ok ? "PASS" : "FAIL", exactHits, worstRatio);
     return ok;
 }
 
-#endif  // AML_MEMBER3_CPP
+#endif  // AML_CHAINS_PEELING_CPP
 
-#ifdef AML_STANDALONE_3
+#ifdef AML_STANDALONE_CHAINS_PEELING
 int main() {
-    bool ok = testMember1();
-    ok = testMember2() && ok;
-    ok = testMember3() && ok;
+    bool ok = testIngestScc();
+    ok = testCyclesFan() && ok;
+    ok = testChainsPeeling() && ok;
     return ok ? 0 : 1;
 }
 #endif

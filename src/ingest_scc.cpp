@@ -1,23 +1,22 @@
 // =====================================================================================
-//  Money-Laundering Ring Detector                      MFCS group project, part 1 of 4
-//  member1_ingest_scc.cpp
+//  Money-Laundering Ring Detector
+//  ingest_scc.cpp
 //
-//  Member 1: transaction graph model, CSV ingestion, synthetic data generator,
-//            Tarjan's strongly connected components.
-//  Proof owned: correctness of Tarjan's algorithm (+ the sorted-adjacency invariant).
+//  Transaction graph model, CSV ingestion, synthetic data generator,
+//  and Tarjan's strongly connected components.
 //
 //  The project is one program split into four files that include each other in a chain:
-//      member1  <-  member2  <-  member3  <-  member4 (contains main)
-//  Build the whole program:   clang++ -std=c++17 -O2 member4_exact_eval.cpp -o aml
-//  Build this part alone:     clang++ -std=c++17 -O2 member1_ingest_scc.cpp -o part1 && ./part1
-//  (On its own, a file runs the self-tests of its own part and every part below it.)
+//      ingest_scc  <-  cycles_fan  <-  chains_peeling  <-  exact_eval (contains main)
+//  Build the whole program:   clang++ -std=c++17 -O2 exact_eval.cpp -o aml
+//  Build this module alone:   clang++ -std=c++17 -O2 ingest_scc.cpp -o ingest_scc && ./ingest_scc
+//  (On its own, a file runs the self-tests of its own module and every module below it.)
 // =====================================================================================
-#ifndef AML_PART_OF_LATER
-#define AML_STANDALONE_1
+#ifndef AML_INCLUDED
+#define AML_STANDALONE_INGEST_SCC
 #endif
 
-#ifndef AML_MEMBER1_CPP
-#define AML_MEMBER1_CPP
+#ifndef AML_INGEST_SCC_CPP
+#define AML_INGEST_SCC_CPP
 
 #include <algorithm>
 #include <chrono>
@@ -175,6 +174,10 @@ std::vector<std::string> splitCsvLine(const std::string& line) {
 // cannot be opened. O(m log m) overall (the sort in finalize).
 bool loadCsv(const std::string& path, Graph& g, IngestStats& stats) {
     std::ifstream in(path);
+    if (!in && path.find('/') == std::string::npos) {
+        in.open("data/" + path);
+        if (!in) in.open("../data/" + path);
+    }
     if (!in) return false;
     std::string line;
     std::getline(in, line);  // header
@@ -357,8 +360,8 @@ SccResult tarjanScc(const Graph& g) {
 
 // ------------------------------- report section -------------------------------------
 
-void reportMember1(const Graph& g, const IngestStats& stats, double loadSeconds, const SccResult& scc,
-                   double sccSeconds) {
+void reportIngestScc(const Graph& g, const IngestStats& stats, double loadSeconds, const SccResult& scc,
+                     double sccSeconds) {
     int maxOut = 0, maxIn = 0;
     for (int i = 0; i < g.n; i++) {
         maxOut = std::max(maxOut, g.outDegree(i));
@@ -369,7 +372,7 @@ void reportMember1(const Graph& g, const IngestStats& stats, double loadSeconds,
         if (size > 1) nontrivial++;
         largest = std::max(largest, size);
     }
-    std::printf("== Member 1: ingestion and SCC ==\n");
+    std::printf("== Ingestion and SCC ==\n");
     std::printf("accounts (vertices)         %d\n", g.n);
     std::printf("transfers (edges)           %zu\n", g.edges.size());
     std::printf("rows skipped (malformed)    %lld\n", stats.rowsSkipped);
@@ -396,7 +399,7 @@ std::vector<std::vector<char>> reachability(const Graph& g) {
     return reach;
 }
 
-bool testMember1() {
+bool testIngestScc() {
     int failedBefore = checksFailed;
 
     // 1. Timestamp parsing (known epoch values, leap day, bad format).
@@ -505,12 +508,12 @@ bool testMember1() {
     CHECK(synthStats.launderingEdges >= 3 + 16 + 4 + 28 && synthStats.launderingEdges <= 6 + 16 + 6 + 28);
 
     bool ok = checksFailed == failedBefore;
-    std::printf("[member 1] ingestion + SCC tests: %s (1000 random graphs vs brute force)\n", ok ? "PASS" : "FAIL");
+    std::printf("[ingest_scc] ingestion + SCC tests: %s (1000 random graphs vs brute force)\n", ok ? "PASS" : "FAIL");
     return ok;
 }
 
-#endif  // AML_MEMBER1_CPP
+#endif  // AML_INGEST_SCC_CPP
 
-#ifdef AML_STANDALONE_1
-int main() { return testMember1() ? 0 : 1; }
+#ifdef AML_STANDALONE_INGEST_SCC
+int main() { return testIngestScc() ? 0 : 1; }
 #endif
