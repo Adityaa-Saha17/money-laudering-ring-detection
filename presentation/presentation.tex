@@ -47,7 +47,7 @@
 {\normalsize
 \begin{tabular}{cccc}
 \textbf{Adityaa Saha} & \textbf{Debtanu Das} & \textbf{Jeeban Jyoti Patra} & \textbf{Shatadeep De} \\
-{\footnotesize\color{graytext}Member 1} & {\footnotesize\color{graytext}Member 2} & {\footnotesize\color{graytext}Member 3} & {\footnotesize\color{graytext}Member 4}
+{\footnotesize\color{graytext}23CS01002} & {\footnotesize\color{graytext}23CS01016} & {\footnotesize\color{graytext}23CS01026} & {\footnotesize\color{graytext}23CS01072}
 \end{tabular}
 \par}
 
@@ -101,37 +101,37 @@
 \end{frame}
 
 % ========================== SLIDE 3 ==========================
-\begin{frame}{Model and the equal split}
-\textbf{Graph:} directed temporal multigraph $G = (V, E)$. Each edge has an amount $a(e)$ and a time $t(e)$, and edges are indexed in time order. Dense detectors use the simple undirected projection $H$, with density $\rho(S) = |E(S)| / |S|$.
+\begin{frame}{Graph model and detection pipeline}
+\textbf{Graph model:} directed temporal multigraph $G = (V, E)$ with amount $a(e)$ and time $t(e)$. Dense detectors use the simple undirected projection $H$, with density $\rho(S) = |E(S)| / |S|$.
 
-\vspace{0.2cm}
+\vspace{0.15cm}
 \centering
-{\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llll@{}}
+{\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lll@{}}
 \toprule
-\textbf{\#} & \textbf{Member \& Algorithms} & \textbf{Main proof} & \textbf{File} \\
+\textbf{Pipeline Stage} & \textbf{Core Algorithm \& Guarantee} & \textbf{Detection Target} \\
 \midrule
-1 & Adityaa Saha: Ingestion, Kosaraju SCC & Kosaraju correct & \texttt{src/ingest\_scc.cpp} \\
-2 & Debtanu Das: Temporal cycles, fan-out/in & Cycle search exact & \texttt{src/cycles\_fan.cpp} \\
-3 & Jeeban Jyoti Patra: Layering chains, peeling & $\frac{1}{2}$-approximation & \texttt{src/chains\_peeling.cpp} \\
-4 & Shatadeep De: Exact densest, evaluation & Min-cut reduction & \texttt{src/exact\_eval.cpp} \\
+\textbf{1. Ingestion \& SCC} & Stable sort, Kosaraju SCC & Time-ordered lists, SCC pruning \\
+\textbf{2. Temporal Patterns} & Pruned window DFS, sliding window & Temporal cycles ($2..K$), smurfing hubs \\
+\textbf{3. Layering \& Peeling} & DAG DP, Charikar greedy peeling & Pass-through chains, dense cores \\
+\textbf{4. Exact Densest \& Eval} & Min-cut reduction + Dinkelbach & Exact densest ring $\rho^*$, evaluation \\
 \bottomrule
 \end{tabular}
 }
 
 \vspace{0.3cm}
 \begin{tikzpicture}[
-    box/.style={draw=accent!65, fill=softbg, rounded corners=2pt, font=\footnotesize, minimum width=2.2cm, minimum height=0.55cm},
+    box/.style={draw=accent!65, fill=softbg, rounded corners=2pt, font=\scriptsize, minimum width=2.2cm, minimum height=0.52cm, align=center},
     arr/.style={->, >=stealth, thick, color=accent}
 ]
-\node[box] (m1) {\texttt{ingest\_scc}};
-\node[box, right=0.38cm of m1] (m2) {\texttt{cycles\_fan}};
-\node[box, right=0.38cm of m2] (m3) {\texttt{chains\_peeling}};
-\node[box, right=0.38cm of m3] (m4) {\texttt{exact\_eval} + \texttt{main}};
-\draw[arr] (m1) -- (m2);
-\draw[arr] (m2) -- (m3);
-\draw[arr] (m3) -- (m4);
+\node[box] (s1) {1. Ingest \& SCC};
+\node[box, right=0.25cm of s1] (s2) {2. Cycles \& Fans};
+\node[box, right=0.25cm of s2] (s3) {3. Chains \& Peeling};
+\node[box, right=0.25cm of s3] (s4) {4. Exact \& Eval};
+\draw[arr] (s1) -- (s2);
+\draw[arr] (s2) -- (s3);
+\draw[arr] (s3) -- (s4);
 \end{tikzpicture}
 
 \vspace{0.15cm}
@@ -139,7 +139,7 @@
 \end{frame}
 
 % ========================== SLIDE 4 ==========================
-\begin{frame}{Ingestion and the graph \memberbadge{Member 1: Adityaa Saha}}
+\begin{frame}{Ingestion and the graph \memberbadge{Adityaa Saha}}
 \begin{itemize}
 \setlength{\itemsep}{0.45em}
 \item Parse the eleven IBM columns, with portable hand-written epoch conversion.
@@ -150,12 +150,12 @@
 
 \vspace{0.35cm}
 \begin{block}{Invariant: time-sorted adjacency}
-Every adjacency list is in non-decreasing time order, because it is filled in increasing index order from a time-sorted array. So ``edges of $u$ after time $\tau$'' is a binary search, which members 2 and 3 rely on.
+Every adjacency list is in non-decreasing time order, because it is filled in increasing index order from a time-sorted array. So ``edges of $u$ after time $\tau$'' is a binary search, which downstream pattern detectors rely on.
 \end{block}
 \end{frame}
 
 % ========================== SLIDE 5 ==========================
-\begin{frame}{Kosaraju's SCC algorithm \memberbadge{Member 1: Adityaa Saha}}
+\begin{frame}{Kosaraju's SCC algorithm \memberbadge{Adityaa Saha}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.58\textwidth}
 \begin{itemize}
@@ -171,14 +171,14 @@ Every adjacency list is in non-decreasing time order, because it is filled in in
 \vspace{0.2cm}
 \begin{block}{Why we need it}
 A cycle lives inside one SCC.\\
-Member 2 prunes every search edge that leaves the root's SCC.
+Cycle detection prunes every search edge that leaves the root's SCC.
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
 % ========================== SLIDE 6 ==========================
-\begin{frame}{Kosaraju 2-pass SCC \memberbadge{Member 1: Adityaa Saha}}
+\begin{frame}{Kosaraju 2-pass SCC \memberbadge{Adityaa Saha}}
 \textbf{Theorem.} When $v$ finishes, $\text{low}[v] = \text{disc}[v] \iff v$ is the root of its SCC, and the popped set is exactly that SCC.
 
 \vspace{0.3cm}
@@ -192,7 +192,7 @@ Member 2 prunes every search edge that leaves the root's SCC.
 \end{frame}
 
 % ========================== SLIDE 7 ==========================
-\begin{frame}{Member 1: tests \memberbadge{Adityaa Saha}}
+\begin{frame}{Ingestion and SCC: verification \memberbadge{Adityaa Saha}}
 \begin{itemize}
 \setlength{\itemsep}{0.5em}
 \item Hand-made CSV: parallel edges, a self loop, rows out of order, a malformed row. Checks degrees, the handshake sum, the sorted invariant and the Amount Paid column.
@@ -208,7 +208,7 @@ Member 2 prunes every search edge that leaves the root's SCC.
 \end{frame}
 
 % ========================== SLIDE 8 ==========================
-\begin{frame}{Temporal cycles: definition \memberbadge{Member 2: Debtanu Das}}
+\begin{frame}{Temporal cycles: definition \memberbadge{Debtanu Das}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.60\textwidth}
 A \textbf{temporal cycle} $e_1, \dots, e_k$ with $2 \le k \le K$:
@@ -245,7 +245,7 @@ A \textbf{temporal cycle} $e_1, \dots, e_k$ with $2 \le k \le K$:
 \end{frame}
 
 % ========================== SLIDE 9 ==========================
-\begin{frame}{Proof: the bounded search is exact \memberbadge{Member 2: Debtanu Das}}
+\begin{frame}{Proof: the bounded search is exact \memberbadge{Debtanu Das}}
 \textbf{Lemma.} All vertices of a temporal cycle share one SCC (a closed walk), so SCC pruning loses nothing.
 
 \vspace{0.25cm}
@@ -262,7 +262,7 @@ A \textbf{temporal cycle} $e_1, \dots, e_k$ with $2 \le k \le K$:
 \end{frame}
 
 % ========================== SLIDE 10 ==========================
-\begin{frame}{Fan-out / fan-in (smurfing) \memberbadge{Member 2: Debtanu Das}}
+\begin{frame}{Fan-out / fan-in (smurfing) \memberbadge{Debtanu Das}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.58\textwidth}
 \begin{itemize}
@@ -298,7 +298,7 @@ For each right end, the window kept is the \emph{longest} run spanning at most $
 \end{frame}
 
 % ========================== SLIDE 11 ==========================
-\begin{frame}{Member 2: tests \memberbadge{Debtanu Das}}
+\begin{frame}{Cycles and smurfing: verification \memberbadge{Debtanu Das}}
 \begin{itemize}
 \setlength{\itemsep}{0.55em}
 \item Hand-made 3-cycle plus a late parallel edge: exactly 1 cycle at $W = 100\,\text{s}$ and 2 at $W = 480\,\text{s}$. $K = 2$ finds none, and $W = 19$ versus $W = 20$ is the exact boundary.
@@ -313,7 +313,7 @@ For each right end, the window kept is the \emph{longest} run spanning at most $
 \end{frame}
 
 % ========================== SLIDE 12 ==========================
-\begin{frame}{Pass-through chains (layering) \memberbadge{Member 3: Jeeban Jyoti Patra}}
+\begin{frame}{Pass-through chains (layering) \memberbadge{Jeeban Jyoti Patra}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.58\textwidth}
 $f$ \textbf{follows} $e$: $f$ leaves the account $e$ entered, comes later in index order, within $D$ seconds, and keeps the amount within a $1 - \varepsilon$ factor.
@@ -349,7 +349,7 @@ $f$ \textbf{follows} $e$: $f$ leaves the account $e$ entered, comes later in ind
 \end{frame}
 
 % ========================== SLIDE 13 ==========================
-\begin{frame}{$k$-core and Charikar's greedy peeling \memberbadge{Member 3: Jeeban Jyoti Patra}}
+\begin{frame}{$k$-core and Charikar's greedy peeling \memberbadge{Jeeban Jyoti Patra}}
 \begin{itemize}
 \setlength{\itemsep}{0.5em}
 \item Project to the simple undirected graph $H$, where parallel and reverse transfers collapse.
@@ -378,7 +378,7 @@ $f$ \textbf{follows} $e$: $f$ leaves the account $e$ entered, comes later in ind
 \end{frame}
 
 % ========================== SLIDE 14 ==========================
-\begin{frame}{Proof: greedy is a $\frac{1}{2}$-approximation \memberbadge{Member 3: Jeeban Jyoti Patra}}
+\begin{frame}{Proof: greedy is a $\frac{1}{2}$-approximation \memberbadge{Jeeban Jyoti Patra}}
 Let $S^*$ be densest, with $\rho^* = \rho(S^*)$.
 
 \vspace{0.25cm}
@@ -397,7 +397,7 @@ Let $S^*$ be densest, with $\rho^* = \rho(S^*)$.
 \end{frame}
 
 % ========================== SLIDE 15 ==========================
-\begin{frame}{Member 3: tests \memberbadge{Jeeban Jyoti Patra}}
+\begin{frame}{Chains and peeling: verification \memberbadge{Jeeban Jyoti Patra}}
 \begin{itemize}
 \setlength{\itemsep}{0.45em}
 \item Hand-made 3-hop chain: the boundaries $D = 9$ versus $10\,\text{s}$, and $\varepsilon = 0.02$ versus $0.10$ versus $0.6$.
@@ -413,7 +413,7 @@ Let $S^*$ be densest, with $\rho^* = \rho(S^*)$.
 \end{frame}
 
 % ========================== SLIDE 16 ==========================
-\begin{frame}{Exact densest subgraph via min cut \memberbadge{Member 4: Shatadeep De}}
+\begin{frame}{Exact densest subgraph via min cut \memberbadge{Shatadeep De}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.56\textwidth}
 Network $N(p, q)$ for a guess $p/q$:
@@ -460,7 +460,7 @@ All capacities are integers. Max flow uses Edmonds-Karp's algorithm, written ite
 \end{frame}
 
 % ========================== SLIDE 17 ==========================
-\begin{frame}{Proof: reduction and iteration are exact \memberbadge{Member 4: Shatadeep De}}
+\begin{frame}{Proof: reduction and iteration are exact \memberbadge{Shatadeep De}}
 \textbf{Theorem 1.} A minimum cut minimises $p|S| - q|E(S)|$. This is negative iff some $S$ has $\rho(S) > p/q$, and then the min-cut side is such a set.
 
 \vspace{0.25cm}
@@ -473,11 +473,11 @@ All capacities are integers. Max flow uses Edmonds-Karp's algorithm, written ite
 \end{itemize}
 
 \vspace{0.25cm}
-\textbf{Pruning.} By member 3's lemma, $S^*$ lies in the $\lceil \rho_{\text{greedy}} \rceil$-core, so the network is built only on that core.
+\textbf{Pruning.} By the core-degree lemma, $S^*$ lies in the $\lceil \rho_{\text{greedy}} \rceil$-core, so the network is built only on that core.
 \end{frame}
 
 % ========================== SLIDE 18 ==========================
-\begin{frame}{Evaluation harness \memberbadge{Member 4: Shatadeep De}}
+\begin{frame}{Evaluation harness \memberbadge{Shatadeep De}}
 \begin{itemize}
 \setlength{\itemsep}{0.45em}
 \item Scored \textbf{per transfer} against the ``Is Laundering'' label: precision, recall, $F_1$.
@@ -494,7 +494,7 @@ All capacities are integers. Max flow uses Edmonds-Karp's algorithm, written ite
 \end{frame}
 
 % ========================== SLIDE 19 ==========================
-\begin{frame}{Verification \& synthetic sanity run \memberbadge{Member 4: Shatadeep De}}
+\begin{frame}{Verification \& synthetic sanity run \memberbadge{Shatadeep De}}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.40\textwidth}
 \textbf{Verification}\\
@@ -529,7 +529,7 @@ Exact densest & 0.006 & 1.00 & 0.07 \\
 \end{frame}
 
 % ========================== SLIDE 20 ==========================
-\begin{frame}{Results on IBM \texttt{HI-Small\_Trans.csv} \memberbadge{Member 4: Shatadeep De}}
+\begin{frame}{Results on IBM \texttt{HI-Small\_Trans.csv} \memberbadge{Shatadeep De}}
 {\footnotesize\textbf{515\,088} accounts, \textbf{5\,078\,345} transfers (5\,166 non-self-loop laundering labels, base rate $0.115\%$), load 3.60\,s, SCC 0.12\,s.}
 
 \vspace{0.18cm}
@@ -570,7 +570,7 @@ Exact densest & 321 & 0 & 0.0000 & 0.0000 & 0.0000 & 0.007 & 81 vertices, $\rho 
 \setlength{\itemsep}{0.4em}
 \item Five laundering structures, each with a \textbf{formal definition}, a \textbf{proof} and a \textbf{complexity bound}.
 \item Guarantees: exact (SCC, cycles, fans, chains, densest subgraph) and $\frac{1}{2}$-approximate (greedy).
-\item One portable C++17 program in four files (Adityaa Saha, Debtanu Das, Jeeban Jyoti Patra, Shatadeep De).
+\item One unified C++17 pipeline with modular staged architecture and strict mathematical guarantees.
 \item Verified against brute force (72 checks, 14\,400 random graphs) and benchmarked on 5.08M IBM AML transfers (\texttt{HI-Small\_Trans.csv}): \textbf{54.6\% union recall} in 3.86\,s and \textbf{57.4\% 5-core precision}.
 \item Future work: add amount/format thresholds for fans, currency normalization for chains, and iterative dense-group peeling.
 \end{itemize}
